@@ -1,0 +1,838 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telar — editor de diseños</title>
+<style>
+  :root{
+    --ground:#D9DEDC;
+    --panel:#EDF0EE;
+    --ink:#16232E;
+    --rule:#94A0A2;
+    --accent:#9E3B32;
+    --soft:#B9C3C2;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    padding:22px 20px 14px;
+    border-bottom:1px solid var(--rule);
+  }
+  h1{
+    font:400 30px/1.1 Georgia,"Iowan Old Style","Palatino Linotype",serif;
+    margin:0 0 4px;
+    letter-spacing:.2px;
+  }
+  header p{margin:0;max-width:62ch;color:#41525C;font-size:14px}
+  main{display:flex;align-items:flex-start;gap:0;flex-wrap:wrap}
+  #side{
+    width:290px;flex:0 0 290px;
+    padding:18px 20px 40px;
+    border-right:1px solid var(--rule);
+    min-height:60vh;
+  }
+  #stage{flex:1 1 420px;padding:18px 20px 60px;overflow:auto}
+  fieldset{
+    border:none;border-top:1px solid var(--rule);
+    margin:0 0 18px;padding:14px 0 0;
+  }
+  legend{
+    font:400 15px/1 Georgia,serif;padding:0 8px 0 0;
+    color:#41525C;
+  }
+  label{display:block;font-size:13px;color:#41525C;margin:10px 0 3px}
+  select,input[type=number],button,input[type=text]{
+    font:inherit;font-size:14px;color:var(--ink);
+    background:var(--panel);
+    border:1px solid var(--rule);
+    border-radius:2px;padding:6px 8px;
+  }
+  select,input[type=number],input[type=text]{width:100%}
+  button{cursor:pointer;width:100%;margin-top:8px;text-align:left}
+  button:hover{border-color:var(--ink)}
+  button:active{background:var(--soft)}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  .swatches{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .sw{
+    width:26px;height:26px;border:1px solid var(--rule);
+    border-radius:2px;cursor:pointer;padding:0;margin:0;
+  }
+  .sw[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:1px}
+  input[type=color]{
+    width:36px;height:28px;padding:0;border:1px solid var(--rule);
+    background:none;cursor:pointer;border-radius:2px;
+  }
+  #readout{
+    font-size:13px;line-height:1.7;color:#41525C;
+    border-top:1px solid var(--rule);padding-top:12px;margin-top:4px;
+  }
+  #readout b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .warn{color:var(--accent)}
+  canvas{
+    background:var(--panel);
+    border:1px solid var(--rule);
+    touch-action:none;display:block;max-width:100%;
+  }
+  .legend2{font-size:12.5px;color:#41525C;margin:10px 0 16px;max-width:62ch}
+  .tabs{display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid var(--rule)}
+  .tabs button{
+    width:auto;margin:0;border:none;background:none;
+    padding:7px 14px;border-bottom:2px solid transparent;
+    color:#41525C;
+  }
+  .tabs button[aria-pressed=true]{
+    border-bottom-color:var(--accent);color:var(--ink);
+  }
+  .hide{display:none}
+  #file{display:none}
+  @media (max-width:760px){
+    #side{width:100%;flex:1 1 100%;border-right:none;border-bottom:1px solid var(--rule);min-height:0}
+  }
+</style>
+
+<header>
+  <h1>Telar</h1>
+  <p>Editor de diseños para telar de pedales. El enhebrado, el amarre y el pisado se pintan a mano; la tela se calcula sola. Guarda y abre archivos WIF.</p>
+</header>
+
+<main>
+<div id="side">
+
+  <fieldset>
+    <legend>Telar</legend>
+    <div class="row">
+      <div><label>Marcos</label>
+        <select id="shafts"></select></div>
+      <div><label>Pedales</label>
+        <select id="treadles"></select></div>
+    </div>
+    <div class="row">
+      <div><label>Hilos de urdimbre</label>
+        <input type="number" id="ends" min="4" max="400" step="1"></div>
+      <div><label>Pasadas</label>
+        <input type="number" id="picks" min="4" max="400" step="1"></div>
+    </div>
+    <label>Calada</label>
+    <select id="shed">
+      <option value="rising">Marcos que suben</option>
+      <option value="sinking">Marcos que bajan</option>
+    </select>
+    <button id="direct">Amarre directo (pedal i ↔ marco i)</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Estructuras</legend>
+    <select id="preset"></select>
+    <button id="load">Cargar estructura</button>
+    <button id="clear">Vaciar todo</button>
+    <button id="undo">Deshacer</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Hilos</legend>
+    <label>Color activo</label>
+    <div class="row" style="align-items:center">
+      <input type="color" id="pick-color" value="#9E3B32" style="flex:0 0 36px">
+      <div class="swatches" id="swatches"></div>
+    </div>
+    <p class="legend2" style="margin:8px 0 0">Toca las franjas de color arriba y a la derecha del diseño para teñir hilo por hilo.</p>
+    <label>Rayado automático cada</label>
+    <div class="row">
+      <input type="number" id="stripe-n" min="1" max="64" value="4" style="flex:0 0 70px">
+      <button id="stripe-warp" style="margin:0">Urdimbre</button>
+      <button id="stripe-weft" style="margin:0">Trama</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Archivo</legend>
+    <button id="save-wif">Guardar WIF</button>
+    <button id="open-wif">Abrir WIF</button>
+    <button id="png-draft">Descargar PNG del diseño</button>
+    <button id="png-cloth">Descargar PNG de la tela</button>
+    <input type="file" id="file" accept=".wif,.txt">
+  </fieldset>
+
+  <div id="readout"></div>
+</div>
+
+<div id="stage">
+  <div class="tabs">
+    <button id="tab-draft" aria-pressed="true">Diseño</button>
+    <button id="tab-cloth" aria-pressed="false">Tela repetida</button>
+    <span style="flex:1"></span>
+    <label for="zoom" style="margin:0;align-self:center;padding-right:8px">Zoom</label>
+    <input type="range" id="zoom" min="6" max="26" value="13" style="width:110px;align-self:center">
+  </div>
+
+  <p class="legend2" id="hint">Arriba a la izquierda, el enhebrado: cada columna es un hilo de urdimbre, cada fila un marco. Arriba a la derecha, el amarre de pedales a marcos. A la derecha, el pisado. Abajo, la tela resultante.</p>
+
+  <canvas id="draft"></canvas>
+  <canvas id="cloth" class="hide"></canvas>
+</div>
+</main>
+
+<script>
+"use strict";
+
+const PALETTE = ["#16232E","#E8E4D9","#9E3B32","#C08A2E","#3F6B58","#6B4E7A","#A9B4B2","#D9C9A8"];
+
+const S = {
+  shafts:4, treadles:4, ends:48, picks:48,
+  threading:[],          // por hilo: 0 = sin enhebrar, 1..shafts
+  tieup:[],              // tieup[pedal][marco] boolean
+  treadling:[],          // treadling[pasada][pedal] boolean
+  warpC:[], weftC:[],
+  shed:"rising",
+  title:"Sin título"
+};
+
+let cell = 13, gap = 10, margin = 2;
+let color = "#9E3B32";
+let undoStack = [];
+
+/* ---------- estructura de datos ---------- */
+
+function mat(rows, cols){ return Array.from({length:rows},()=>new Array(cols).fill(false)); }
+
+function resize(){
+  S.threading = fit(S.threading, S.ends, 0).map(v => v > S.shafts ? 0 : v);
+  S.warpC     = fit(S.warpC, S.ends, PALETTE[0]);
+  S.weftC     = fit(S.weftC, S.picks, PALETTE[1]);
+  S.tieup     = fitMat(S.tieup, S.treadles, S.shafts);
+  S.treadling = fitMat(S.treadling, S.picks, S.treadles);
+}
+function fit(a, n, dflt){
+  const out = new Array(n);
+  for(let i=0;i<n;i++) out[i] = (a && a[i] !== undefined) ? a[i] : dflt;
+  return out;
+}
+function fitMat(m, rows, cols){
+  const out = mat(rows, cols);
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++)
+    if(m && m[r] && m[r][c]) out[r][c] = true;
+  return out;
+}
+
+function snapshot(){
+  undoStack.push(JSON.stringify({
+    shafts:S.shafts,treadles:S.treadles,ends:S.ends,picks:S.picks,
+    threading:S.threading,tieup:S.tieup,treadling:S.treadling,
+    warpC:S.warpC,weftC:S.weftC,shed:S.shed
+  }));
+  if(undoStack.length > 60) undoStack.shift();
+}
+function undo(){
+  const s = undoStack.pop();
+  if(!s) return;
+  Object.assign(S, JSON.parse(s));
+  syncControls(); draw();
+}
+
+/* ---------- el cálculo: tela = enhebrado · amarre · pisado ---------- */
+
+function raisedShafts(pick){
+  const up = new Array(S.shafts + 1).fill(false);
+  for(let t=0;t<S.treadles;t++){
+    if(!S.treadling[pick][t]) continue;
+    for(let s=0;s<S.shafts;s++) if(S.tieup[t][s]) up[s+1] = true;
+  }
+  return up;
+}
+// true = el hilo de urdimbre queda encima en ese cruce
+function computeCloth(){
+  const g = [];
+  for(let p=0;p<S.picks;p++){
+    const up = raisedShafts(p);
+    const row = new Array(S.ends);
+    for(let e=0;e<S.ends;e++){
+      const sh = S.threading[e];
+      let over = sh > 0 && up[sh];
+      if(S.shed === "sinking") over = sh > 0 ? !up[sh] : false;
+      row[e] = over;
+    }
+    g.push(row);
+  }
+  return g;
+}
+
+// flotante más largo, contando de forma cíclica (el diseño se repite)
+function longestFloat(grid){
+  let warp = 0, weft = 0;
+  for(let e=0;e<S.ends;e++){
+    let run = 0, best = 0;
+    for(let k=0;k<S.picks*2;k++){
+      const v = grid[k % S.picks][e];
+      run = v ? run+1 : 0;
+      if(k >= S.picks) best = Math.max(best, run);
+    }
+    warp = Math.max(warp, Math.min(best, S.picks));
+  }
+  for(let p=0;p<S.picks;p++){
+    let run = 0, best = 0;
+    for(let k=0;k<S.ends*2;k++){
+      const v = !grid[p][k % S.ends];
+      run = v ? run+1 : 0;
+      if(k >= S.ends) best = Math.max(best, run);
+    }
+    weft = Math.max(weft, Math.min(best, S.ends));
+  }
+  return {warp, weft};
+}
+
+/* ---------- geometría del lienzo ---------- */
+
+function geom(){
+  const x0 = margin;
+  const tieX = x0 + S.ends*cell + gap;
+  const wefX = tieX + S.treadles*cell + gap;
+  const y0 = margin;                       // franja de color de urdimbre
+  const thrY = y0 + cell + 4;              // enhebrado
+  const drwY = thrY + S.shafts*cell + gap; // tela
+  return {
+    x0, tieX, wefX, y0, thrY, drwY,
+    w: wefX + cell + margin,
+    h: drwY + S.picks*cell + margin
+  };
+}
+
+function grid(ctx, x, y, cols, rows, heavy){
+  ctx.strokeStyle = "#B9C3C2"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for(let c=0;c<=cols;c++){
+    if(heavy && c%4===0) continue;
+    ctx.moveTo(x+c*cell+.5, y); ctx.lineTo(x+c*cell+.5, y+rows*cell);
+  }
+  for(let r=0;r<=rows;r++){
+    if(heavy && r%4===0) continue;
+    ctx.moveTo(x, y+r*cell+.5); ctx.lineTo(x+cols*cell, y+r*cell+.5);
+  }
+  ctx.stroke();
+  if(!heavy) return;
+  ctx.strokeStyle = "#94A0A2";
+  ctx.beginPath();
+  for(let c=0;c<=cols;c+=4){ ctx.moveTo(x+c*cell+.5, y); ctx.lineTo(x+c*cell+.5, y+rows*cell); }
+  for(let r=0;r<=rows;r+=4){ ctx.moveTo(x, y+r*cell+.5); ctx.lineTo(x+cols*cell, y+r*cell+.5); }
+  ctx.stroke();
+}
+
+function draw(){
+  const cv = document.getElementById("draft");
+  const ctx = cv.getContext("2d");
+  const g = geom();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = g.w*dpr; cv.height = g.h*dpr;
+  cv.style.width = g.w+"px"; cv.style.height = g.h+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = "#EDF0EE"; ctx.fillRect(0,0,g.w,g.h);
+
+  // franja de color de urdimbre
+  for(let e=0;e<S.ends;e++){
+    ctx.fillStyle = S.warpC[e];
+    ctx.fillRect(g.x0+e*cell, g.y0, cell, cell);
+  }
+  ctx.strokeStyle="#94A0A2"; ctx.lineWidth=1;
+  ctx.strokeRect(g.x0+.5, g.y0+.5, S.ends*cell, cell);
+
+  // enhebrado: marco 1 abajo
+  grid(ctx, g.x0, g.thrY, S.ends, S.shafts, true);
+  ctx.fillStyle = "#16232E";
+  for(let e=0;e<S.ends;e++){
+    const sh = S.threading[e];
+    if(!sh) continue;
+    const row = S.shafts - sh;
+    ctx.fillRect(g.x0+e*cell+1, g.thrY+row*cell+1, cell-1, cell-1);
+  }
+
+  // amarre
+  grid(ctx, g.tieX, g.thrY, S.treadles, S.shafts, false);
+  for(let t=0;t<S.treadles;t++) for(let s=0;s<S.shafts;s++){
+    if(!S.tieup[t][s]) continue;
+    ctx.fillRect(g.tieX+t*cell+1, g.thrY+(S.shafts-1-s)*cell+1, cell-1, cell-1);
+  }
+
+  // tela
+  const cloth = computeCloth();
+  for(let p=0;p<S.picks;p++) for(let e=0;e<S.ends;e++){
+    ctx.fillStyle = cloth[p][e] ? S.warpC[e] : S.weftC[p];
+    ctx.fillRect(g.x0+e*cell, g.drwY+p*cell, cell, cell);
+  }
+  if(cell >= 9) grid(ctx, g.x0, g.drwY, S.ends, S.picks, true);
+  ctx.strokeStyle="#94A0A2";
+  ctx.strokeRect(g.x0+.5, g.drwY+.5, S.ends*cell, S.picks*cell);
+
+  // pisado
+  grid(ctx, g.tieX, g.drwY, S.treadles, S.picks, false);
+  ctx.fillStyle = "#16232E";
+  for(let p=0;p<S.picks;p++) for(let t=0;t<S.treadles;t++){
+    if(!S.treadling[p][t]) continue;
+    ctx.fillRect(g.tieX+t*cell+1, g.drwY+p*cell+1, cell-1, cell-1);
+  }
+
+  // franja de color de trama
+  for(let p=0;p<S.picks;p++){
+    ctx.fillStyle = S.weftC[p];
+    ctx.fillRect(g.wefX, g.drwY+p*cell, cell, cell);
+  }
+  ctx.strokeStyle="#94A0A2";
+  ctx.strokeRect(g.wefX+.5, g.drwY+.5, cell, S.picks*cell);
+
+  drawCloth(cloth);
+  report(cloth);
+}
+
+function drawCloth(cloth){
+  const cv = document.getElementById("cloth");
+  const ctx = cv.getContext("2d");
+  const c = Math.max(3, Math.round(cell*0.6));
+  const rx = Math.max(1, Math.ceil(520/(S.ends*c)));
+  const ry = Math.max(1, Math.ceil(520/(S.picks*c)));
+  const w = S.ends*c*rx, h = S.picks*c*ry;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = w*dpr; cv.height = h*dpr;
+  cv.style.width = w+"px"; cv.style.height = h+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  for(let y=0;y<S.picks*ry;y++){
+    const p = y % S.picks;
+    for(let x=0;x<S.ends*rx;x++){
+      const e = x % S.ends;
+      ctx.fillStyle = cloth[p][e] ? S.warpC[e] : S.weftC[p];
+      ctx.fillRect(x*c, y*c, c, c);
+    }
+  }
+}
+
+function report(cloth){
+  const used = new Set(S.threading.filter(v=>v>0));
+  const f = longestFloat(cloth);
+  const unth = S.threading.filter(v=>v===0).length;
+  const dead = [];
+  for(let t=0;t<S.treadles;t++) if(!S.tieup[t].some(Boolean)) dead.push(t+1);
+  let html = "";
+  html += `Marcos en uso: <b>${used.size}</b> de ${S.shafts}<br>`;
+  html += `Flotante máximo en urdimbre: <b>${f.warp}</b><br>`;
+  html += `Flotante máximo en trama: <b>${f.weft}</b><br>`;
+  if(unth) html += `<span class="warn">${unth} hilo(s) sin enhebrar</span><br>`;
+  if(dead.length) html += `<span class="warn">Pedal(es) sin amarre: ${dead.join(", ")}</span><br>`;
+  if(f.warp > 7 || f.weft > 7) html += `<span class="warn">Flotantes largos: la tela quedará poco estable</span>`;
+  document.getElementById("readout").innerHTML = html;
+}
+
+/* ---------- interacción ---------- */
+
+let painting = null;
+
+function hit(px, py){
+  const g = geom();
+  const inX = (x,cols) => px >= x && px < x + cols*cell;
+  const inY = (y,rows) => py >= y && py < y + rows*cell;
+  if(inX(g.x0,S.ends) && inY(g.y0,1))
+    return {zone:"warpc", e:Math.floor((px-g.x0)/cell)};
+  if(inX(g.x0,S.ends) && inY(g.thrY,S.shafts))
+    return {zone:"thread", e:Math.floor((px-g.x0)/cell),
+            s:S.shafts - Math.floor((py-g.thrY)/cell)};
+  if(inX(g.tieX,S.treadles) && inY(g.thrY,S.shafts))
+    return {zone:"tieup", t:Math.floor((px-g.tieX)/cell),
+            s:S.shafts-1 - Math.floor((py-g.thrY)/cell)};
+  if(inX(g.tieX,S.treadles) && inY(g.drwY,S.picks))
+    return {zone:"tread", t:Math.floor((px-g.tieX)/cell),
+            p:Math.floor((py-g.drwY)/cell)};
+  if(inX(g.wefX,1) && inY(g.drwY,S.picks))
+    return {zone:"weftc", p:Math.floor((py-g.drwY)/cell)};
+  return null;
+}
+
+function apply(h){
+  if(!h) return;
+  if(h.zone === "thread"){
+    S.threading[h.e] = (painting && painting.shaft !== undefined) ? painting.shaft : h.s;
+  } else if(h.zone === "tieup"){
+    S.tieup[h.t][h.s] = painting ? painting.on : !S.tieup[h.t][h.s];
+  } else if(h.zone === "tread"){
+    S.treadling[h.p][h.t] = painting ? painting.on : !S.treadling[h.p][h.t];
+  } else if(h.zone === "warpc"){
+    S.warpC[h.e] = color;
+  } else if(h.zone === "weftc"){
+    S.weftC[h.p] = color;
+  }
+  draw();
+}
+
+function pos(ev){
+  const cv = document.getElementById("draft");
+  const r = cv.getBoundingClientRect();
+  const src = ev.touches ? ev.touches[0] : ev;
+  const scale = (S.ends ? cv.width/(window.devicePixelRatio||1) : 1) / r.width;
+  return [(src.clientX - r.left)*scale, (src.clientY - r.top)*scale];
+}
+
+function down(ev){
+  const [x,y] = pos(ev);
+  const h = hit(x,y);
+  if(!h) return;
+  ev.preventDefault();
+  snapshot();
+  painting = {zone:h.zone};
+  if(h.zone === "thread") painting.shaft = (S.threading[h.e] === h.s) ? 0 : h.s;
+  if(h.zone === "tieup")  painting.on = !S.tieup[h.t][h.s];
+  if(h.zone === "tread")  painting.on = !S.treadling[h.p][h.t];
+  apply(h);
+}
+function move(ev){
+  if(!painting) return;
+  ev.preventDefault();
+  const [x,y] = pos(ev);
+  const h = hit(x,y);
+  if(h && h.zone === painting.zone) apply(h);
+}
+function up(){ painting = null; }
+
+/* ---------- estructuras ---------- */
+
+function straight(n, len){ const a=[]; for(let i=0;i<len;i++) a.push(i%n+1); return a; }
+function point(n, len){
+  const seq=[]; for(let i=1;i<=n;i++) seq.push(i); for(let i=n-1;i>=2;i--) seq.push(i);
+  const a=[]; for(let i=0;i<len;i++) a.push(seq[i%seq.length]); return a;
+}
+function tieRows(rows, treadles, shafts){
+  const m = mat(treadles, shafts);
+  rows.forEach((list,t)=> list.forEach(s => { if(t<treadles && s<=shafts) m[t][s-1]=true; }));
+  return m;
+}
+function treadSeq(seq, picks, treadles){
+  const m = mat(picks, treadles);
+  for(let p=0;p<picks;p++){
+    const step = seq[p % seq.length];
+    (Array.isArray(step)?step:[step]).forEach(t => { if(t<=treadles) m[p][t-1]=true; });
+  }
+  return m;
+}
+const twillTie = (n,adv)=> {
+  const rows=[];
+  for(let t=0;t<n;t++){ const r=[]; for(let k=0;k<adv;k++) r.push((t+k)%n+1); rows.push(r); }
+  return rows;
+};
+
+const PRESETS = {
+  "Tafetán (4 marcos)": ()=>({
+    shafts:4, treadles:2, ends:48, picks:48,
+    threading: straight(4,48),
+    tieup: tieRows([[1,3],[2,4]],2,4),
+    treadling: treadSeq([1,2],48,2)
+  }),
+  "Sarga 2/2 (4)": ()=>({
+    shafts:4, treadles:4, ends:48, picks:48,
+    threading: straight(4,48),
+    tieup: tieRows(twillTie(4,2),4,4),
+    treadling: treadSeq([1,2,3,4],48,4)
+  }),
+  "Sarga 1/3 (4)": ()=>({
+    shafts:4, treadles:4, ends:48, picks:48,
+    threading: straight(4,48),
+    tieup: tieRows(twillTie(4,1),4,4),
+    treadling: treadSeq([1,2,3,4],48,4)
+  }),
+  "Espiguilla (4)": ()=>{
+    const th=[]; for(let b=0;b<6;b++){
+      const asc = b%2===0;
+      for(let i=0;i<8;i++) th.push(asc ? i%4+1 : [3,2,1,4][i%4]);
+    }
+    return {shafts:4,treadles:4,ends:48,picks:48,threading:th,
+      tieup:tieRows(twillTie(4,2),4,4), treadling:treadSeq([1,2,3,4],48,4)};
+  },
+  "Punto de rombo (4)": ()=>({
+    shafts:4, treadles:4, ends:48, picks:48,
+    threading: point(4,48),
+    tieup: tieRows(twillTie(4,2),4,4),
+    treadling: treadSeq([1,2,3,4,3,2],48,4)
+  }),
+  "Rosepath (4)": ()=>({
+    shafts:4, treadles:6, ends:48, picks:48,
+    threading: (()=>{const s=[1,2,3,4,3,2,1,2,3,4,3,2];const a=[];for(let i=0;i<48;i++)a.push(s[i%s.length]);return a;})(),
+    tieup: tieRows([[1,2],[2,3],[3,4],[4,1],[1,3],[2,4]],6,4),
+    treadling: treadSeq([1,2,3,4,3,2,5,6],48,6)
+  }),
+  "Esterilla 2/2 (4)": ()=>({
+    shafts:4, treadles:2, ends:48, picks:48,
+    threading: straight(4,48),
+    tieup: tieRows([[1,2],[3,4]],2,4),
+    treadling: treadSeq([1,1,2,2],48,2)
+  }),
+  "Doble tela (4)": ()=>({
+    shafts:4, treadles:4, ends:48, picks:48,
+    threading: (()=>{const s=[1,3,2,4];const a=[];for(let i=0;i<48;i++)a.push(s[i%4]);return a;})(),
+    tieup: tieRows([[1],[2],[1,2,3],[1,2,4]],4,4),
+    treadling: treadSeq([1,3,2,4],48,4)
+  }),
+  "Waffle (5)": ()=>({
+    shafts:5, treadles:8, ends:48, picks:48,
+    threading: point(5,48),
+    tieup: tieRows([[1],[1,2],[1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5],[4,5],[5]],8,5),
+    treadling: treadSeq([1,2,3,4,5,6,7,8],48,8)
+  }),
+  "Sarga 2/2 (8)": ()=>({
+    shafts:8, treadles:8, ends:64, picks:64,
+    threading: straight(8,64),
+    tieup: tieRows(twillTie(8,4),8,8),
+    treadling: treadSeq([1,2,3,4,5,6,7,8],64,8)
+  }),
+  "Sarga rota (8)": ()=>({
+    shafts:8, treadles:8, ends:64, picks:64,
+    threading: (()=>{const s=[1,2,3,4,6,7,8,5];const a=[];for(let i=0;i<64;i++)a.push(s[i%8]);return a;})(),
+    tieup: tieRows(twillTie(8,4),8,8),
+    treadling: treadSeq([1,2,3,4,5,6,7,8],64,8)
+  }),
+  "Satén de 8, paso 3": ()=>({
+    shafts:8, treadles:8, ends:64, picks:64,
+    threading: straight(8,64),
+    tieup: (()=>{const rows=[];for(let t=0;t<8;t++)rows.push([ (t*3)%8+1 ]);return tieRows(rows,8,8);})(),
+    treadling: treadSeq([1,2,3,4,5,6,7,8],64,8)
+  }),
+  "Rombo curvo (8)": ()=>({
+    shafts:8, treadles:8, ends:64, picks:64,
+    threading: point(8,64),
+    tieup: tieRows(twillTie(8,4),8,8),
+    treadling: treadSeq([1,2,3,4,5,6,7,8,7,6,5,4,3,2],64,8)
+  }),
+  "Summer & winter, 2 bloques (4)": ()=>({
+    shafts:4, treadles:8, ends:64, picks:64,
+    threading: (()=>{const s=[1,3,2,3,1,3,2,3,1,4,2,4,1,4,2,4];const a=[];for(let i=0;i<64;i++)a.push(s[i%16]);return a;})(),
+    tieup: tieRows([[1,3],[2,3],[1,4],[2,4],[1,2,3],[1,2,4],[1,2],[3,4]],8,4),
+    treadling: treadSeq([7,1,7,2,7,1,7,2,7,3,7,4,7,3,7,4],64,8)
+  })
+};
+
+/* ---------- WIF ---------- */
+
+function toWIF(){
+  const cols = [];
+  const idx = c => { const k = c.toUpperCase(); let i = cols.indexOf(k);
+    if(i<0){ cols.push(k); i = cols.length-1; } return i+1; };
+  const wI = S.warpC.map(idx), fI = S.weftC.map(idx);
+  const rgb = h => [1,3,5].map(i=>parseInt(h.substr(i,2),16)).join(",");
+  const L = [];
+  L.push("[WIF]","Version=1.1","Date=2026","Developers=—",
+         "Source Program=Telar","Source Version=1.0","");
+  L.push("[CONTENTS]","COLOR PALETTE=yes","TEXT=yes","WEAVING=yes","WARP=yes","WEFT=yes",
+         "COLOR TABLE=yes","THREADING=yes","TIEUP=yes","TREADLING=yes",
+         "WARP COLORS=yes","WEFT COLORS=yes","");
+  L.push("[COLOR PALETTE]",`Entries=${cols.length}`,"Form=RGB","Range=0,255","");
+  L.push("[TEXT]",`Title=${S.title}`,"");
+  L.push("[WEAVING]",`Shafts=${S.shafts}`,`Treadles=${S.treadles}`,
+         `Rising Shed=${S.shed==="rising"?"true":"false"}`,"");
+  L.push("[WARP]",`Threads=${S.ends}`,"Units=Decipoints","Color=1","");
+  L.push("[WEFT]",`Threads=${S.picks}`,"Units=Decipoints","Color=2","");
+  L.push("[COLOR TABLE]");
+  cols.forEach((c,i)=>L.push(`${i+1}=${rgb(c)}`)); L.push("");
+  L.push("[THREADING]");
+  S.threading.forEach((s,i)=>{ if(s) L.push(`${i+1}=${s}`); }); L.push("");
+  L.push("[TIEUP]");
+  for(let t=0;t<S.treadles;t++){
+    const on = []; for(let s=0;s<S.shafts;s++) if(S.tieup[t][s]) on.push(s+1);
+    if(on.length) L.push(`${t+1}=${on.join(",")}`);
+  } L.push("");
+  L.push("[TREADLING]");
+  for(let p=0;p<S.picks;p++){
+    const on = []; for(let t=0;t<S.treadles;t++) if(S.treadling[p][t]) on.push(t+1);
+    if(on.length) L.push(`${p+1}=${on.join(",")}`);
+  } L.push("");
+  L.push("[WARP COLORS]"); wI.forEach((v,i)=>L.push(`${i+1}=${v}`)); L.push("");
+  L.push("[WEFT COLORS]"); fI.forEach((v,i)=>L.push(`${i+1}=${v}`)); L.push("");
+  return L.join("\r\n");
+}
+
+function parseWIF(txt){
+  const sec = {}; let cur = null;
+  txt.split(/\r?\n/).forEach(line=>{
+    const l = line.trim();
+    if(!l || l.startsWith(";")) return;
+    const m = l.match(/^\[(.+)\]$/);
+    if(m){ cur = m[1].toUpperCase(); sec[cur] = {}; return; }
+    const i = l.indexOf("=");
+    if(i<0 || !cur) return;
+    sec[cur][l.slice(0,i).trim().toUpperCase()] = l.slice(i+1).trim();
+  });
+  const num = (s,k,d)=> sec[s] && sec[s][k] !== undefined ? parseInt(sec[s][k],10) : d;
+  S.shafts   = num("WEAVING","SHAFTS",4);
+  S.treadles = num("WEAVING","TREADLES",S.shafts);
+  S.ends     = num("WARP","THREADS",48);
+  S.picks    = num("WEFT","THREADS",48);
+  S.shed = (sec.WEAVING && /false/i.test(sec.WEAVING["RISING SHED"]||"")) ? "sinking" : "rising";
+  S.title = (sec.TEXT && sec.TEXT.TITLE) || "Sin título";
+  S.threading = []; S.tieup = []; S.treadling = []; S.warpC = []; S.weftC = [];
+  resize();
+  const tbl = {};
+  const rng = (sec["COLOR PALETTE"] && sec["COLOR PALETTE"].RANGE) || "0,255";
+  const hi = parseInt(rng.split(",")[1],10) || 255;
+  if(sec["COLOR TABLE"]) for(const k in sec["COLOR TABLE"]){
+    const p = sec["COLOR TABLE"][k].split(",").map(v=>Math.round(parseInt(v,10)/hi*255));
+    tbl[k] = "#" + p.map(v=>Math.max(0,Math.min(255,v||0)).toString(16).padStart(2,"0")).join("");
+  }
+  if(sec.THREADING) for(const k in sec.THREADING){
+    const e = parseInt(k,10)-1, s = parseInt(sec.THREADING[k],10);
+    if(e>=0 && e<S.ends && s>0 && s<=S.shafts) S.threading[e] = s;
+  }
+  if(sec.TIEUP) for(const k in sec.TIEUP){
+    const t = parseInt(k,10)-1;
+    sec.TIEUP[k].split(",").forEach(v=>{ const s=parseInt(v,10)-1;
+      if(t>=0&&t<S.treadles&&s>=0&&s<S.shafts) S.tieup[t][s]=true; });
+  }
+  if(sec.TREADLING) for(const k in sec.TREADLING){
+    const p = parseInt(k,10)-1;
+    sec.TREADLING[k].split(",").forEach(v=>{ const t=parseInt(v,10)-1;
+      if(p>=0&&p<S.picks&&t>=0&&t<S.treadles) S.treadling[p][t]=true; });
+  }
+  if(sec["WARP COLORS"]) for(const k in sec["WARP COLORS"]){
+    const e=parseInt(k,10)-1, c=tbl[sec["WARP COLORS"][k]];
+    if(c && e>=0 && e<S.ends) S.warpC[e]=c;
+  }
+  if(sec["WEFT COLORS"]) for(const k in sec["WEFT COLORS"]){
+    const p=parseInt(k,10)-1, c=tbl[sec["WEFT COLORS"][k]];
+    if(c && p>=0 && p<S.picks) S.weftC[p]=c;
+  }
+}
+
+function download(name, blob){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ---------- controles ---------- */
+
+function opts(sel, list){
+  sel.innerHTML = list.map(v=>`<option value="${v}">${v}</option>`).join("");
+}
+function syncControls(){
+  document.getElementById("shafts").value = S.shafts;
+  document.getElementById("treadles").value = S.treadles;
+  document.getElementById("ends").value = S.ends;
+  document.getElementById("picks").value = S.picks;
+  document.getElementById("shed").value = S.shed;
+}
+
+function init(){
+  opts(document.getElementById("shafts"), [2,4,5,6,7,8,10,12,16]);
+  opts(document.getElementById("treadles"), [2,3,4,5,6,7,8,10,12,14,16]);
+  document.getElementById("preset").innerHTML =
+    Object.keys(PRESETS).map(k=>`<option>${k}</option>`).join("");
+
+  const sw = document.getElementById("swatches");
+  PALETTE.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "sw"; b.style.background = c;
+    b.setAttribute("aria-pressed", c===color);
+    b.title = c;
+    b.onclick = ()=>{ color = c; document.getElementById("pick-color").value = c;
+      [...sw.children].forEach(x=>x.setAttribute("aria-pressed", x===b)); };
+    sw.appendChild(b);
+  });
+  document.getElementById("pick-color").oninput = e=>{
+    color = e.target.value;
+    [...sw.children].forEach(x=>x.setAttribute("aria-pressed", false));
+  };
+
+  const reload = ()=>{
+    snapshot();
+    S.shafts   = +document.getElementById("shafts").value;
+    S.treadles = +document.getElementById("treadles").value;
+    S.ends     = Math.max(4, Math.min(400, +document.getElementById("ends").value||48));
+    S.picks    = Math.max(4, Math.min(400, +document.getElementById("picks").value||48));
+    S.shed     = document.getElementById("shed").value;
+    resize(); draw();
+  };
+  ["shafts","treadles","ends","picks","shed"].forEach(id=>
+    document.getElementById(id).addEventListener("change", reload));
+
+  document.getElementById("zoom").oninput = e=>{ cell = +e.target.value; draw(); };
+
+  document.getElementById("load").onclick = ()=>{
+    snapshot();
+    const p = PRESETS[document.getElementById("preset").value]();
+    Object.assign(S, p);
+    S.warpC = []; S.weftC = [];
+    resize(); syncControls(); draw();
+  };
+  document.getElementById("clear").onclick = ()=>{
+    snapshot();
+    S.threading = new Array(S.ends).fill(0);
+    S.tieup = mat(S.treadles, S.shafts);
+    S.treadling = mat(S.picks, S.treadles);
+    draw();
+  };
+  document.getElementById("undo").onclick = undo;
+  document.getElementById("direct").onclick = ()=>{
+    snapshot();
+    S.tieup = mat(S.treadles, S.shafts);
+    for(let t=0;t<Math.min(S.treadles,S.shafts);t++) S.tieup[t][t] = true;
+    draw();
+  };
+  document.getElementById("stripe-warp").onclick = ()=>{
+    snapshot();
+    const n = +document.getElementById("stripe-n").value || 4;
+    for(let e=0;e<S.ends;e++) if(Math.floor(e/n)%2===0) S.warpC[e] = color;
+    draw();
+  };
+  document.getElementById("stripe-weft").onclick = ()=>{
+    snapshot();
+    const n = +document.getElementById("stripe-n").value || 4;
+    for(let p=0;p<S.picks;p++) if(Math.floor(p/n)%2===0) S.weftC[p] = color;
+    draw();
+  };
+
+  document.getElementById("save-wif").onclick = ()=>
+    download("diseno.wif", new Blob([toWIF()], {type:"text/plain"}));
+  document.getElementById("open-wif").onclick = ()=>
+    document.getElementById("file").click();
+  document.getElementById("file").onchange = e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{ snapshot();
+      try { parseWIF(r.result); syncControls(); draw(); }
+      catch(err){ document.getElementById("readout").innerHTML =
+        `<span class="warn">No se pudo leer el archivo. Revisa que sea un WIF válido.</span>`; }
+    };
+    r.readAsText(f);
+    e.target.value = "";
+  };
+  document.getElementById("png-draft").onclick = ()=>
+    document.getElementById("draft").toBlob(b=>download("diseno.png", b));
+  document.getElementById("png-cloth").onclick = ()=>
+    document.getElementById("cloth").toBlob(b=>download("tela.png", b));
+
+  const td = document.getElementById("tab-draft"), tc = document.getElementById("tab-cloth");
+  const swap = which=>{
+    td.setAttribute("aria-pressed", which==="d");
+    tc.setAttribute("aria-pressed", which==="c");
+    document.getElementById("draft").classList.toggle("hide", which!=="d");
+    document.getElementById("cloth").classList.toggle("hide", which==="d");
+    document.getElementById("hint").textContent = which==="d"
+      ? "Arriba a la izquierda, el enhebrado: cada columna es un hilo de urdimbre, cada fila un marco. Arriba a la derecha, el amarre de pedales a marcos. A la derecha, el pisado. Abajo, la tela resultante."
+      : "El motivo repetido en las dos direcciones, para ver cómo se comporta a lo ancho de la tela.";
+  };
+  td.onclick = ()=>swap("d");
+  tc.onclick = ()=>swap("c");
+
+  const cv = document.getElementById("draft");
+  cv.addEventListener("mousedown", down);
+  window.addEventListener("mousemove", move);
+  window.addEventListener("mouseup", up);
+  cv.addEventListener("touchstart", down, {passive:false});
+  cv.addEventListener("touchmove", move, {passive:false});
+  window.addEventListener("touchend", up);
+  window.addEventListener("keydown", e=>{
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="z"){ e.preventDefault(); undo(); }
+  });
+
+  Object.assign(S, PRESETS["Sarga 2/2 (4)"]());
+  resize(); syncControls(); draw();
+}
+
+init();
+</script>
