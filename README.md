@@ -99,8 +99,8 @@ en cualquier otro, y viceversa.
 
 ## Cómo citar
 
-> Aguirre Guerrero, D. (2026). *Telar: editor de diseños para telar de pedal* (versión 1.0)
-> [Software]. Zenodo. https://doi.org/[DOI]
+> Aguirre-Guerrero, D. (2026). *Telar: editor de diseños para telar de pedal* (versión 1.0)
+> [Software]. Zenodo.  https://doi.org/10.5281/zenodo.22683228.
 
 ## Licencia
 
