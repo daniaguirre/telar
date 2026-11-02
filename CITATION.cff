@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "Si usas este programa, por favor cítalo así."
+title: "Telar: editor de diseños para telar de pedal"
+abstract: >-
+  Editor de drafts para telar de pedal con marcos, en un solo archivo HTML y sin
+  conexión. El enhebrado, el amarre y el pisado se editan directamente y la tela
+  se calcula como producto de matrices booleanas. Lee y escribe formato WIF.
+version: "1.0"
+date-released: "2026-09-09"
+type: software
+license: MIT
+authors:
+  - family-names: Aguirre-Guerrero
+    given-names: Daniela
+    email: danaguirreg@gmail.com
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22683228
+    description: Depósito del software en Zenodo
+repository-code: "https://github.com/daniaguirre/telar"
+url: "https://daniaguirre.github.io/telar/"
+keywords:
+  - telar de pedal
+  - handweaving
+  - WIF
+  - matrices booleanas
+  - diseño textil

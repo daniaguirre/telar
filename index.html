@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telar — editor de diseños para telar de pedal</title>
+<meta name="description" content="Editor libre de drafts para telar de pedal con marcos. Funciona sin conexión, en un solo archivo HTML, y lee y escribe formato WIF.">
+<meta property="og:title" content="Telar — editor de diseños para telar de pedal">
+<meta property="og:description" content="Editor libre de drafts para telar de pedal con marcos. Sin conexión, sin instalación, formato WIF.">
+<meta property="og:image" content="fig_draft.png">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --bg:#faf8f5; --fg:#1d1b19; --muted:#6a645e; --rule:#e2dcd4;
+    --accent:#8a3a2a; --accent-fg:#fff; --card:#fff;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#171513; --fg:#ece7e1; --muted:#a59d94; --rule:#332e29;
+      --accent:#d98a6a; --accent-fg:#1a1512; --card:#201c19;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#171513; --fg:#ece7e1; --muted:#a59d94; --rule:#332e29;
+    --accent:#d98a6a; --accent-fg:#1a1512; --card:#201c19;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:17px/1.6 Georgia,"Iowan Old Style","Times New Roman",serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:46rem; margin:0 auto; padding:3.5rem 16px 5rem}
+  header{border-bottom:1px solid var(--rule); padding-bottom:1.75rem; margin-bottom:2rem}
+  h1{font-size:2.3rem; line-height:1.15; margin:0 0 .4rem; letter-spacing:-.01em}
+  .tag{color:var(--muted); font-size:1.05rem; margin:0}
+  h2{font-size:1.15rem; margin:2.5rem 0 .6rem; letter-spacing:.02em; text-transform:uppercase;
+     font-family:system-ui,sans-serif; font-weight:600; color:var(--muted)}
+  p{margin:0 0 1rem}
+  a{color:var(--accent)}
+  .cta{
+    display:inline-block; margin:1.5rem 0 .5rem; padding:.85rem 1.9rem;
+    background:var(--accent); color:var(--accent-fg); text-decoration:none;
+    border-radius:3px; font-family:system-ui,sans-serif; font-weight:600; font-size:1.05rem;
+  }
+  .cta:hover{filter:brightness(1.08)}
+  .note{color:var(--muted); font-size:.92rem}
+  figure{margin:2rem 0}
+  img{max-width:100%; height:auto; display:block; border:1px solid var(--rule); border-radius:3px}
+  figcaption{color:var(--muted); font-size:.88rem; margin-top:.55rem}
+  ul{margin:0 0 1rem; padding-left:1.2rem}
+  li{margin-bottom:.35rem}
+  .cite{
+    background:var(--card); border:1px solid var(--rule); border-left:3px solid var(--accent);
+    padding:.9rem 1.1rem; border-radius:3px; font-size:.95rem;
+  }
+  code{font-family:var(--mono); font-size:.9em; background:var(--card);
+       border:1px solid var(--rule); border-radius:3px; padding:.1em .35em}
+  footer{border-top:1px solid var(--rule); margin-top:3rem; padding-top:1.25rem;
+         color:var(--muted); font-size:.92rem}
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:0 2rem}
+  @media (max-width:620px){ .cols{grid-template-columns:1fr; gap:0} h1{font-size:1.9rem} .wrap{padding-top:2.5rem} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Telar</h1>
+  <p class="tag">Editor de diseños para telar de pedal con marcos. Libre, en español y sin conexión.</p>
+</header>
+
+<p>El enhebrado, el amarre y el pisado se pintan arrastrando el cursor sobre la retícula; la tela se
+recalcula al instante y el programa reporta la longitud máxima de flotante. Todo el cálculo ocurre en
+tu equipo: no hay servidor, no hay cuenta y no se envía nada a ninguna parte.</p>
+
+<a class="cta" href="telar.html">Abrir el editor</a>
+<p class="note">También puedes <a href="telar.html" download>descargar el archivo</a> y abrirlo con doble clic cuando no tengas internet. Es un solo HTML.</p>
+
+<figure>
+  <img src="fig_draft.png" alt="Sarga 2/2 sobre cuatro marcos: enhebrado, amarre, pisado y la tela resultante.">
+  <figcaption>Sarga 2/2 sobre cuatro marcos: enhebrado, amarre, pisado y la tela resultante.</figcaption>
+</figure>
+
+<h2>Qué hace</h2>
+<div class="cols">
+<ul>
+  <li>Enhebrado, amarre y pisado editables</li>
+  <li>Tela calculada en tiempo real</li>
+  <li>Flotante máximo, cíclico</li>
+  <li>Color hilo por hilo y rayado automático</li>
+</ul>
+<ul>
+  <li>Lee y escribe <strong>WIF</strong></li>
+  <li>Exporta PNG del diseño y de la tela repetida</li>
+  <li>Catorce estructuras cargadas y verificadas</li>
+  <li>Zoom y deshacer</li>
+</ul>
+</div>
+
+<h2>Qué todavía no hace</h2>
+<p>No resuelve el problema inverso (de una tela al mínimo de marcos y pedales), no verifica cohesión,
+no admite planes de levada ni más de dieciséis marcos, y no trae documentación para quien no sepa ya
+tejer. Son ausencias deliberadas que delimitan esta versión.</p>
+
+<h2>El modelo</h2>
+<p>Tres matrices sobre el semianillo booleano determinan la tela por completo: el enhebrado <em>E</em>,
+el amarre <em>A</em> y el pisado <em>P</em>. La tela es su producto, <code>T = P A Eᵀ</code>, donde
+<em>T<sub>ji</sub></em> = 1 indica que el hilo <em>i</em> queda encima en la pasada <em>j</em>.
+El detalle completo está en el <a href="https://github.com/daniaguirre/telar#el-modelo">README</a>.</p>
+
+<h2>Cómo citar</h2>
+<p class="cite">Aguirre-Guerrero, D. (2026). <em>Telar: editor de diseños para telar de pedal</em>
+(versión 1.0) [Software]. Zenodo.
+<a href="https://doi.org/10.5281/zenodo.22683228">https://doi.org/10.5281/zenodo.22683228</a></p>
+
+<footer>
+  Daniela Aguirre Guerrero — investigadora en teoría algebraica de gráficas (UAM-Cuajimalpa) y
+  artesana tejedora registrada ante el IFAEM.<br>
+  Código y documentación en <a href="https://github.com/daniaguirre/telar">github.com/daniaguirre/telar</a>.
+  Los diseños que hagas con este programa son enteramente tuyos.
+</footer>
+
+</div>
+</body>
+</html>
