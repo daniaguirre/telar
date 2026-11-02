@@ -109,7 +109,7 @@ no lo que tejas con él, y no impone ninguna restricción sobre vender lo que pr
 
 ## Autoría
 
-Daniela Aguirre Guerrero. Investigadora en teoría algebraica de gráficas (UAM-Cuajimalpa) y artesana tejedora registrada ante el IFAEM.
+Daniela Aguirre Guerrero. Investigadora en teoría algebraica de gráficas (UAM-Cuajimalpa) y artesana tejedora registrada ante el IIFAEM.
 
 ---
 
