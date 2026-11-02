@@ -100,7 +100,7 @@ en cualquier otro, y viceversa.
 ## Cómo citar
 
 > Aguirre-Guerrero, D. (2026). *Telar: editor de diseños para telar de pedal* (versión 1.0)
-> [Software]. Zenodo.  https://doi.org/10.5281/zenodo.22683228.
+> [Software]. Zenodo. https://doi.org/10.5281/zenodo.22683228
 
 ## Licencia
 
@@ -109,7 +109,7 @@ no lo que tejas con él, y no impone ninguna restricción sobre vender lo que pr
 
 ## Autoría
 
-Daniela Aguirre Guerrero. Investigadora en teoría algebraica de gráficas y artesana tejedora registrada ante el IFAEM.
+Daniela Aguirre Guerrero. Investigadora en teoría algebraica de gráficas (UAM-Cuajimalpa) y artesana tejedora registrada ante el IFAEM.
 
 ---
 
